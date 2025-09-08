@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <!-- Essential for mobile responsiveness -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>响应式墙面砖块计算器</title>
+    <style>
+        /* General Styles */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 15px; /* Reduced padding for mobile */
+            background-color: #f4f7f9;
+            color: #333;
+            display: flex;
+            flex-wrap: wrap; /* Allow wrapping for responsiveness */
+            gap: 20px;
+        }
+        
+        .panel {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        h1, h2 {
+            margin-top: 0;
+            color: #1a73e8;
+            border-bottom: 2px solid #e0e0e0;
+            padding-bottom: 10px;
+        }
+
+        .input-group, .tile-type, .option-group {
+            margin-bottom: 15px;
+            display: flex;
+            flex-wrap: wrap; /* Allow inputs to wrap on small screens */
+            align-items: center;
+            gap: 10px;
+        }
+
+        label {
+            font-weight: 500;
+            min-width: 80px;
+            flex-shrink: 0; /* Prevent label from shrinking */
+        }
+
+        input[type="number"] {
+            width: 65px; /* Slightly wider for easier tapping */
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+        }
+
+        button {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            background-color: #1a73e8;
+            color: white;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            width: 100%; /* Make buttons full-width */
+            margin-top: 10px;
+        }
+        
+        button.remove-btn {
+            background-color: #e94560;
+            padding: 5px 10px;
+            width: auto; /* Allow remove button to be smaller */
+            margin-top: 0;
+        }
+        button.remove-btn:hover {
+            background-color: #c73049;
+        }
+        #addTile {
+            background-color: #34a853;
+        }
+        #addTile:hover {
+            background-color: #2c8f45;
+        }
+        
+        #wallCanvas {
+            border: 1px solid #ccc;
+            background-color: #f0f0f0;
+            /* Responsive canvas */
+            max-width: 100%;
+            height: auto; 
+        }
+
+        #results-container {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        #results-container li {
+            background-color: #e8f0fe;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .color-box {
+            width: 20px;
+            height: 20px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            flex-shrink: 0;
+        }
+
+        /* --- Responsive Layout --- */
+        
+        /* Container for controls */
+        .controls-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            width: 100%; /* Full width on mobile */
+        }
+
+        /* Container for canvas */
+        .canvas-container {
+            width: 100%; /* Full width on mobile */
+        }
+
+        /* For screens wider than 1000px (desktops) */
+        @media (min-width: 1001px) {
+            body {
+                flex-wrap: nowrap; /* Prevent wrapping on large screens */
+            }
+            .controls-container {
+                width: 420px; /* Fixed width for controls panel */
+                flex-shrink: 0;
+            }
+            .canvas-container {
+                flex-grow: 1; /* Canvas takes remaining space */
+            }
+            button {
+                width: auto; /* Auto width for buttons on desktop */
+                margin-top: 0;
+            }
+        }
+
+    </style>
+</head>
+<body>
+
+<div class="controls-container">
+    <div class="panel">
+        <h1>墙面砖块计算器</h1>
+        
+        <h2>1. 墙面尺寸</h2>
+        <div class="input-group">
+            <label for="wallWidth">墙面宽度:</label>
+            <input type="number" id="wallWidth" value="1400">
+        </div>
+        <div class="input-group">
+            <label for="wallHeight">墙面高度:</label>
+            <input type="number" id="wallHeight" value="1880">
+        </div>
+        
+        <h2>2. 布局选项</h2>
+        <div class="option-group">
+            <label for="staggerLayout">错缝排列:</label>
+            <input type="checkbox" id="staggerLayout" checked>
+        </div>
+
+        <h2>3. 砖块类型</h2>
+        <div id="tileTypesContainer">
+            <div class="tile-type">
+                <label>砖块 1:</label>
+                <input type="number" class="tileWidth" placeholder="宽" value="200">
+                <span>x</span>
+                <input type="number" class="tileHeight" placeholder="高" value="100">
+                <span>x</span>
+                <input type="number" class="tileDepth" placeholder="厚" value="50">
+                <button class="remove-btn" onclick="this.parentElement.remove()">移除</button>
+            </div>
+            <div class="tile-type">
+                <label>砖块 2:</label>
+                <input type="number" class="tileWidth" placeholder="宽" value="100">
+                <span>x</span>
+                <input type="number" class="tileHeight" placeholder="高" value="100">
+                 <span>x</span>
+                <input type="number" class="tileDepth" placeholder="厚" value="50">
+                <button class="remove-btn" onclick="this.parentElement.remove()">移除</button>
+            </div>
+             <div class="tile-type">
+                <label>砖块 3:</label>
+                <input type="number" class="tileWidth" placeholder="宽" value="200">
+                <span>x</span>
+                <input type="number" class="tileHeight" placeholder="高" value="80">
+                <span>x</span>
+                <input type="number" class="tileDepth" placeholder="厚" value="50">
+                <button class="remove-btn" onclick="this.parentElement.remove()">移除</button>
+            </div>
+        </div>
+        <button id="addTile">添加砖块类型</button>
+        <button id="calculateBtn">开始计算和绘制</button>
+    </div>
+
+    <div class="panel">
+        <h2>4. 用量统计</h2>
+        <ul id="results-container"></ul>
+    </div>
+</div>
+
+<div class="panel canvas-container">
+    <h2>5. 效果预览</h2>
+    <!-- The width/height attributes set the drawing buffer size, CSS controls the display size -->
+    <canvas id="wallCanvas" width="1000" height="800"></canvas>
+</div>
+
+<script>
+// The JavaScript code remains the same as it correctly handles the logic.
+// All responsiveness is handled by the new HTML structure and CSS.
+document.addEventListener('DOMContentLoaded', () => {
+    const addTileBtn = document.getElementById('addTile');
+    const calculateBtn = document.getElementById('calculateBtn');
+    const tileTypesContainer = document.getElementById('tileTypesContainer');
+
+    addTileBtn.addEventListener('click', () => {
+        const count = tileTypesContainer.children.length + 1;
+        const newTileType = document.createElement('div');
+        newTileType.className = 'tile-type';
+        newTileType.innerHTML = `
+            <label>砖块 ${count}:</label>
+            <input type="number" class="tileWidth" placeholder="宽">
+            <span>x</span>
+            <input type="number" class="tileHeight" placeholder="高">
+            <span>x</span>
+            <input type="number" class="tileDepth" placeholder="厚">
+            <button class="remove-btn" onclick="this.parentElement.remove()">移除</button>
+        `;
+        tileTypesContainer.appendChild(newTileType);
+    });
+
+    calculateBtn.addEventListener('click', calculateAndDraw);
+    calculateAndDraw();
+});
+
+function calculateAndDraw() {
+    const wallWidth = parseInt(document.getElementById('wallWidth').value);
+    const wallHeight = parseInt(document.getElementById('wallHeight').value);
+    const isStaggered = document.getElementById('staggerLayout').checked;
+
+    if (isNaN(wallWidth) || isNaN(wallHeight) || wallWidth <= 0 || wallHeight <= 0) {
+        alert('请输入有效的墙面宽度和高度！');
+        return;
+    }
+
+    let tileTypes = [];
+    document.querySelectorAll('.tile-type').forEach((el, index) => {
+        const width = parseInt(el.querySelector('.tileWidth').value);
+        const height = parseInt(el.querySelector('.tileHeight').value);
+        const depth = parseInt(el.querySelector('.tileDepth').value) || 0;
+        if (!isNaN(width) && !isNaN(height) && width > 0 && height > 0) {
+            tileTypes.push({
+                width: width,
+                height: height,
+                depth: depth,
+                color: getRandomColor(index)
+            });
+        }
+    });
+
+    if (tileTypes.length === 0) {
+        alert('请至少定义一种有效的砖块类型！');
+        return;
+    }
+
+    tileTypes.sort((a, b) => b.height - a.height || b.width - a.width);
+    
+    const placedTiles = [];
+    const tileCounts = {};
+    tileTypes.forEach(t => {
+         const name = `砖块 (${t.width}x${t.height}x${t.depth})`;
+         tileCounts[name] = { count: 0, color: t.color };
+    });
+
+    let currentY = wallHeight;
+    let rowIndex = 0;
+
+    while (currentY > 0) {
+        const remainingWallHeight = currentY;
+        
+        const bestTileForNextRow = tileTypes.find(t => t.height <= remainingWallHeight);
+        if (!bestTileForNextRow) break;
+        
+        const currentRowHeight = bestTileForNextRow.height;
+        const validBricksForRow = tileTypes
+            .filter(t => t.height === currentRowHeight)
+            .sort((a, b) => b.width - a.width);
+        
+        const rowY = currentY - currentRowHeight;
+        layRow(rowY, wallWidth, validBricksForRow, rowIndex, isStaggered, placedTiles, tileCounts);
+
+        currentY -= currentRowHeight;
+        rowIndex++;
+    }
+
+    drawWall(placedTiles, wallWidth, wallHeight);
+    displayResults(tileCounts);
+}
+
+function layRow(y, wallWidth, validBricks, rowIndex, isStaggered, placedTiles, tileCounts) {
+    if (validBricks.length === 0) return;
+    
+    const mainBrick = validBricks[0];
+    let currentX = 0;
+    const isOddRow = rowIndex % 2 !== 0;
+
+    if (isStaggered && isOddRow && wallWidth > mainBrick.width) {
+        const offsetWidth = mainBrick.width / 2;
+        fillHorizontalSpace(0, y, offsetWidth, validBricks, placedTiles, tileCounts);
+        currentX = offsetWidth;
+    }
+
+    while (currentX + mainBrick.width <= wallWidth) {
+        const tileName = `砖块 (${mainBrick.width}x${mainBrick.height}x${mainBrick.depth})`;
+        placedTiles.push({ x: currentX, y, ...mainBrick });
+        tileCounts[tileName].count++;
+        currentX += mainBrick.width;
+    }
+
+    const remainingWidth = wallWidth - currentX;
+    if (remainingWidth > 0) {
+        fillHorizontalSpace(currentX, y, remainingWidth, validBricks, placedTiles, tileCounts);
+    }
+}
+
+function fillHorizontalSpace(startX, y, widthToFill, validBricks, placedTiles, tileCounts) {
+    let currentX = startX;
+    let remainingWidth = widthToFill;
+    const tolerance = 0.1;
+
+    while (remainingWidth > tolerance) {
+        let didPlaceTile = false;
+        for (const brick of validBricks) {
+            if (brick.width <= remainingWidth + tolerance) {
+                const tileName = `砖块 (${brick.width}x${brick.height}x${brick.depth})`;
+                placedTiles.push({ x: currentX, y, ...brick });
+                tileCounts[tileName].count++;
+                currentX += brick.width;
+                remainingWidth -= brick.width;
+                didPlaceTile = true;
+                break;
+            }
+        }
+        if (!didPlaceTile) break;
+    }
+}
+
+function drawWall(placedTiles, wallWidth, wallHeight) {
+    const canvas = document.getElementById('wallCanvas');
+    const ctx = canvas.getContext('2d');
+
+    // The scale calculation now depends on the canvas buffer size, not its display size.
+    const scaleX = canvas.width / wallWidth;
+    const scaleY = canvas.height / wallHeight;
+    const scale = Math.min(scaleX, scaleY); // Fill the buffer area
+
+    const renderWidth = wallWidth * scale;
+    const renderHeight = wallHeight * scale;
+    
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    ctx.fillStyle = '#f0f0f0';
+    ctx.fillRect(0, 0, renderWidth, renderHeight);
+
+    ctx.strokeStyle = '#333';
+    ctx.strokeRect(0, 0, renderWidth, renderHeight);
+
+    placedTiles.forEach(tile => {
+        ctx.fillStyle = tile.color;
+        ctx.fillRect(tile.x * scale, tile.y * scale, tile.width * scale, tile.height * scale);
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = Math.max(0.5, scale * 1.5);
+        ctx.strokeRect(tile.x * scale, tile.y * scale, tile.width * scale, tile.height * scale);
+    });
+}
+
+function displayResults(tileCounts) {
+    const resultsContainer = document.getElementById('results-container');
+    resultsContainer.innerHTML = '';
+    
+    const sortedNames = Object.keys(tileCounts).sort();
+
+    for (const name of sortedNames) {
+        const data = tileCounts[name];
+        if (data.count > 0) {
+            const li = document.createElement('li');
+            li.innerHTML = `
+                <div class="color-box" style="background-color: ${data.color};"></div>
+                <span>${name}:</span>
+                <strong>${data.count} 块</strong>
+            `;
+            resultsContainer.appendChild(li);
+        }
+    }
+}
+
+function getRandomColor(seed) {
+    const colors = ['#8ecae6', '#219ebc', '#023047', '#ffb703', '#fb8500', '#e63946', '#f1faee', '#a8dadc', '#457b9d', '#1d3557'];
+    return colors[seed % colors.length];
+}
+
+</script>
+
+</body>
+</html>
