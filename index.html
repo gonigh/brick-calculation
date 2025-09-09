@@ -2,19 +2,18 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <!-- Essential for mobile responsiveness -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>响应式墙面砖块计算器</title>
+    <title>模板化墙面砖块计算器 (带本地保存)</title>
     <style>
         /* General Styles */
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             margin: 0;
-            padding: 15px; /* Reduced padding for mobile */
+            padding: 15px;
             background-color: #f4f7f9;
             color: #333;
             display: flex;
-            flex-wrap: wrap; /* Allow wrapping for responsiveness */
+            flex-wrap: wrap;
             gap: 20px;
         }
         
@@ -25,39 +24,43 @@
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
 
-        h1, h2 {
+        h1, h2, h3 {
             margin-top: 0;
             color: #1a73e8;
-            border-bottom: 2px solid #e0e0e0;
             padding-bottom: 10px;
         }
+        h1, h2 { border-bottom: 2px solid #e0e0e0; }
+        h3 { border-bottom: 1px solid #eee; font-size: 1.1em; margin-bottom: 10px; }
+
 
         .input-group, .tile-type, .option-group {
             margin-bottom: 15px;
             display: flex;
-            flex-wrap: wrap; /* Allow inputs to wrap on small screens */
+            flex-wrap: wrap;
             align-items: center;
             gap: 10px;
+        }
+        .row-template-group {
+             display: grid;
+             grid-template-columns: 60px 1fr;
+             gap: 5px 10px;
+             align-items: center;
         }
 
         label {
             font-weight: 500;
-            min-width: 80px;
-            flex-shrink: 0; /* Prevent label from shrinking */
+            flex-shrink: 0;
         }
 
-        input[type="number"] {
-            width: 65px; /* Slightly wider for easier tapping */
+        input[type="number"], select {
             padding: 8px;
             border: 1px solid #ccc;
             border-radius: 4px;
+            box-sizing: border-box;
+            width: 100%;
         }
-
-        input[type="checkbox"] {
-            width: 18px;
-            height: 18px;
-        }
-
+        input[type="number"] { width: 65px; }
+        
         button {
             padding: 10px 15px;
             border: none;
@@ -66,146 +69,71 @@
             color: white;
             cursor: pointer;
             transition: background-color 0.3s;
-            width: 100%; /* Make buttons full-width */
+            width: 100%;
             margin-top: 10px;
         }
         
-        button.remove-btn {
-            background-color: #e94560;
-            padding: 5px 10px;
-            width: auto; /* Allow remove button to be smaller */
-            margin-top: 0;
-        }
-        button.remove-btn:hover {
-            background-color: #c73049;
-        }
-        #addTile {
-            background-color: #34a853;
-        }
-        #addTile:hover {
-            background-color: #2c8f45;
-        }
+        button.remove-btn { background-color: #e94560; padding: 5px 10px; width: auto; margin-top: 0; }
+        button.remove-btn:hover { background-color: #c73049; }
+        #addTile { background-color: #34a853; }
+        #addTile:hover { background-color: #2c8f45; }
         
-        #wallCanvas {
-            border: 1px solid #ccc;
-            background-color: #f0f0f0;
-            /* Responsive canvas */
-            max-width: 100%;
-            height: auto; 
-        }
+        #wallCanvas { border: 1px solid #ccc; background-color: #f0f0f0; max-width: 100%; height: auto; }
+        #results-container { list-style-type: none; padding: 0; }
+        #results-container li { background-color: #e8f0fe; padding: 10px; border-radius: 4px; margin-bottom: 5px; display: flex; align-items: center; gap: 10px; }
+        .color-box { width: 20px; height: 20px; border: 1px solid #ccc; border-radius: 3px; flex-shrink: 0; }
 
-        #results-container {
-            list-style-type: none;
-            padding: 0;
-        }
-
-        #results-container li {
-            background-color: #e8f0fe;
-            padding: 10px;
-            border-radius: 4px;
-            margin-bottom: 5px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .color-box {
-            width: 20px;
-            height: 20px;
-            border: 1px solid #ccc;
-            border-radius: 3px;
-            flex-shrink: 0;
-        }
-
-        /* --- Responsive Layout --- */
-        
-        /* Container for controls */
-        .controls-container {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-            width: 100%; /* Full width on mobile */
-        }
-
-        /* Container for canvas */
-        .canvas-container {
-            width: 100%; /* Full width on mobile */
-        }
-
-        /* For screens wider than 1000px (desktops) */
+        /* Responsive Layout */
+        .controls-container, .canvas-container { width: 100%; }
         @media (min-width: 1001px) {
-            body {
-                flex-wrap: nowrap; /* Prevent wrapping on large screens */
-            }
-            .controls-container {
-                width: 420px; /* Fixed width for controls panel */
-                flex-shrink: 0;
-            }
-            .canvas-container {
-                flex-grow: 1; /* Canvas takes remaining space */
-            }
-            button {
-                width: auto; /* Auto width for buttons on desktop */
-                margin-top: 0;
-            }
+            body { flex-wrap: nowrap; }
+            .controls-container { width: 450px; flex-shrink: 0; display: flex; flex-direction: column; gap: 20px; }
+            .canvas-container { flex-grow: 1; }
+            button { width: auto; margin-top: 0; }
         }
-
     </style>
 </head>
 <body>
 
 <div class="controls-container">
     <div class="panel">
-        <h1>墙面砖块计算器</h1>
+        <h1>模板化墙面砖块计算器</h1>
         
         <h2>1. 墙面尺寸</h2>
         <div class="input-group">
-            <label for="wallWidth">墙面宽度:</label>
-            <input type="number" id="wallWidth" value="1400">
+            <label>墙面宽度:</label> <input type="number" id="wallWidth" value="530" step="any">
         </div>
         <div class="input-group">
-            <label for="wallHeight">墙面高度:</label>
-            <input type="number" id="wallHeight" value="1880">
+            <label>墙面高度:</label> <input type="number" id="wallHeight" value="1070" step="any">
         </div>
         
-        <h2>2. 布局选项</h2>
-        <div class="option-group">
-            <label for="staggerLayout">错缝排列:</label>
-            <input type="checkbox" id="staggerLayout" checked>
+        <h2>2. 布局模式定义</h2>
+        <div id="row-templates">
+            <h3>固定首行 (最顶行)</h3>
+            <div class="row-template-group">
+                <label for="firstRowHead">头砖:</label> <select id="firstRowHead"></select>
+                <label for="firstRowMain">主循环砖:</label> <select id="firstRowMain"></select>
+                <label for="firstRowTail">尾砖:</label> <select id="firstRowTail"></select>
+            </div>
+            <h3>循环行 1</h3>
+            <div class="row-template-group">
+                <label for="cycleRow1Head">头砖:</label> <select id="cycleRow1Head"></select>
+                <label for="cycleRow1Main">主循环砖:</label> <select id="cycleRow1Main"></select>
+                <label for="cycleRow1Tail">尾砖:</label> <select id="cycleRow1Tail"></select>
+            </div>
+            <h3>循环行 2</h3>
+            <div class="row-template-group">
+                 <label for="cycleRow2Head">头砖:</label> <select id="cycleRow2Head"></select>
+                 <label for="cycleRow2Main">主循环砖:</label> <select id="cycleRow2Main"></select>
+                 <label for="cycleRow2Tail">尾砖:</label> <select id="cycleRow2Tail"></select>
+            </div>
         </div>
 
-        <h2>3. 砖块类型</h2>
+        <h2>3. 砖块类型定义</h2>
         <div id="tileTypesContainer">
-            <div class="tile-type">
-                <label>砖块 1:</label>
-                <input type="number" class="tileWidth" placeholder="宽" value="200">
-                <span>x</span>
-                <input type="number" class="tileHeight" placeholder="高" value="100">
-                <span>x</span>
-                <input type="number" class="tileDepth" placeholder="厚" value="50">
-                <button class="remove-btn" onclick="this.parentElement.remove()">移除</button>
-            </div>
-            <div class="tile-type">
-                <label>砖块 2:</label>
-                <input type="number" class="tileWidth" placeholder="宽" value="100">
-                <span>x</span>
-                <input type="number" class="tileHeight" placeholder="高" value="100">
-                 <span>x</span>
-                <input type="number" class="tileDepth" placeholder="厚" value="50">
-                <button class="remove-btn" onclick="this.parentElement.remove()">移除</button>
-            </div>
-             <div class="tile-type">
-                <label>砖块 3:</label>
-                <input type="number" class="tileWidth" placeholder="宽" value="200">
-                <span>x</span>
-                <input type="number" class="tileHeight" placeholder="高" value="80">
-                <span>x</span>
-                <input type="number" class="tileDepth" placeholder="厚" value="50">
-                <button class="remove-btn" onclick="this.parentElement.remove()">移除</button>
-            </div>
+            <!-- Bricks will be loaded from localStorage or default here -->
         </div>
         <button id="addTile">添加砖块类型</button>
-        <button id="calculateBtn">开始计算和绘制</button>
     </div>
 
     <div class="panel">
@@ -216,169 +144,263 @@
 
 <div class="panel canvas-container">
     <h2>5. 效果预览</h2>
-    <!-- The width/height attributes set the drawing buffer size, CSS controls the display size -->
     <canvas id="wallCanvas" width="1000" height="800"></canvas>
 </div>
 
 <script>
-// The JavaScript code remains the same as it correctly handles the logic.
-// All responsiveness is handled by the new HTML structure and CSS.
-document.addEventListener('DOMContentLoaded', () => {
-    const addTileBtn = document.getElementById('addTile');
-    const calculateBtn = document.getElementById('calculateBtn');
-    const tileTypesContainer = document.getElementById('tileTypesContainer');
+// --- CORE SCRIPT ---
 
-    addTileBtn.addEventListener('click', () => {
-        const count = tileTypesContainer.children.length + 1;
+const STORAGE_KEY = 'wallCalculatorState';
+
+document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('addTile').addEventListener('click', () => {
         const newTileType = document.createElement('div');
         newTileType.className = 'tile-type';
-        newTileType.innerHTML = `
-            <label>砖块 ${count}:</label>
-            <input type="number" class="tileWidth" placeholder="宽">
-            <span>x</span>
-            <input type="number" class="tileHeight" placeholder="高">
-            <span>x</span>
-            <input type="number" class="tileDepth" placeholder="厚">
-            <button class="remove-btn" onclick="this.parentElement.remove()">移除</button>
-        `;
-        tileTypesContainer.appendChild(newTileType);
+        newTileType.innerHTML = `<label>砖块:</label><input type="number" class="tileWidth" placeholder="宽"><span>x</span><input type="number" class="tileHeight" placeholder="高"><button class="remove-btn" onclick="this.parentElement.remove(); updateAndRedraw();">移除</button>`;
+        document.getElementById('tileTypesContainer').appendChild(newTileType);
+        updateAndRedraw();
     });
 
-    calculateBtn.addEventListener('click', calculateAndDraw);
-    calculateAndDraw();
-});
-
-function calculateAndDraw() {
-    const wallWidth = parseInt(document.getElementById('wallWidth').value);
-    const wallHeight = parseInt(document.getElementById('wallHeight').value);
-    const isStaggered = document.getElementById('staggerLayout').checked;
-
-    if (isNaN(wallWidth) || isNaN(wallHeight) || wallWidth <= 0 || wallHeight <= 0) {
-        alert('请输入有效的墙面宽度和高度！');
-        return;
-    }
-
-    let tileTypes = [];
-    document.querySelectorAll('.tile-type').forEach((el, index) => {
-        const width = parseInt(el.querySelector('.tileWidth').value);
-        const height = parseInt(el.querySelector('.tileHeight').value);
-        const depth = parseInt(el.querySelector('.tileDepth').value) || 0;
-        if (!isNaN(width) && !isNaN(height) && width > 0 && height > 0) {
-            tileTypes.push({
-                width: width,
-                height: height,
-                depth: depth,
-                color: getRandomColor(index)
-            });
+    // Any change should trigger a full update and save cycle
+    document.body.addEventListener('change', (event) => {
+        if (event.target.matches('input, select')) {
+            updateAndRedraw();
         }
     });
 
-    if (tileTypes.length === 0) {
-        alert('请至少定义一种有效的砖块类型！');
+    loadState(); // Load saved data first
+    updateAndRedraw(); // Then run initial calculation with loaded or default data
+});
+
+function updateAndRedraw() {
+    updateTileLabels();
+    populateBrickSelects();
+    calculateAndDraw();
+    saveState(); // Save state after every update
+}
+
+
+// --- LOCAL STORAGE FUNCTIONS ---
+
+function saveState() {
+    const bricks = [];
+    document.querySelectorAll('.tile-type').forEach(el => {
+        const width = el.querySelector('.tileWidth').value;
+        const height = el.querySelector('.tileHeight').value;
+        if (width && height) {
+            bricks.push({ width, height });
+        }
+    });
+
+    const state = {
+        wallWidth: document.getElementById('wallWidth').value,
+        wallHeight: document.getElementById('wallHeight').value,
+        bricks: bricks,
+        templates: {
+            first: { head: document.getElementById('firstRowHead').value, main: document.getElementById('firstRowMain').value, tail: document.getElementById('firstRowTail').value },
+            cycle1: { head: document.getElementById('cycleRow1Head').value, main: document.getElementById('cycleRow1Main').value, tail: document.getElementById('cycleRow1Tail').value },
+            cycle2: { head: document.getElementById('cycleRow2Head').value, main: document.getElementById('cycleRow2Main').value, tail: document.getElementById('cycleRow2Tail').value }
+        }
+    };
+
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+
+function loadState() {
+    const savedStateJSON = localStorage.getItem(STORAGE_KEY);
+    const container = document.getElementById('tileTypesContainer');
+
+    if (!savedStateJSON) {
+        // No saved state, create default bricks
+        container.innerHTML = `
+            <div class="tile-type"><label>砖块 1 (A):</label><input type="number" class="tileWidth" value="200"><span>x</span><input type="number" class="tileHeight" value="100"><button class="remove-btn" onclick="this.parentElement.remove(); updateAndRedraw();">移除</button></div>
+            <div class="tile-type"><label>砖块 2 (B):</label><input type="number" class="tileWidth" value="130"><span>x</span><input type="number" class="tileHeight" value="100"><button class="remove-btn" onclick="this.parentElement.remove(); updateAndRedraw();">移除</button></div>
+            <div class="tile-type"><label>砖块 3 (C):</label><input type="number" class="tileWidth" value="176.67"><span>x</span><input type="number" class="tileHeight" value="80"><button class="remove-btn" onclick="this.parentElement.remove(); updateAndRedraw();">移除</button></div>
+        `;
         return;
     }
 
-    tileTypes.sort((a, b) => b.height - a.height || b.width - a.width);
+    const state = JSON.parse(savedStateJSON);
+
+    document.getElementById('wallWidth').value = state.wallWidth || '530';
+    document.getElementById('wallHeight').value = state.wallHeight || '1070';
+
+    container.innerHTML = ''; // Clear container before loading
+    if (state.bricks && state.bricks.length > 0) {
+        state.bricks.forEach(brick => {
+            const newTileType = document.createElement('div');
+            newTileType.className = 'tile-type';
+            newTileType.innerHTML = `<label>Brick:</label><input type="number" class="tileWidth" value="${brick.width}"><span>x</span><input type="number" class="tileHeight" value="${brick.height}"><button class="remove-btn" onclick="this.parentElement.remove(); updateAndRedraw();">移除</button>`;
+            container.appendChild(newTileType);
+        });
+    }
+
+    updateTileLabels();
+    populateBrickSelects();
+
+    if (state.templates) {
+        document.getElementById('firstRowHead').value = state.templates.first.head || '';
+        document.getElementById('firstRowMain').value = state.templates.first.main || '';
+        document.getElementById('firstRowTail').value = state.templates.first.tail || '';
+        document.getElementById('cycleRow1Head').value = state.templates.cycle1.head || '';
+        document.getElementById('cycleRow1Main').value = state.templates.cycle1.main || '';
+        document.getElementById('cycleRow1Tail').value = state.templates.cycle1.tail || '';
+        document.getElementById('cycleRow2Head').value = state.templates.cycle2.head || '';
+        document.getElementById('cycleRow2Main').value = state.templates.cycle2.main || '';
+        document.getElementById('cycleRow2Tail').value = state.templates.cycle2.tail || '';
+    }
+}
+
+
+// --- UI AND CALCULATION FUNCTIONS (largely unchanged) ---
+
+function updateTileLabels() {
+    document.querySelectorAll('#tileTypesContainer .tile-type').forEach((div, index) => {
+        const label = div.querySelector('label');
+        const letter = String.fromCharCode(65 + index);
+        label.textContent = `砖块 ${index + 1} (${letter}):`;
+    });
+}
+
+function getBrickTypes() {
+    const tileTypes = [];
+    const brickMap = {};
+    document.querySelectorAll('.tile-type').forEach((el, index) => {
+        const width = parseFloat(el.querySelector('.tileWidth').value);
+        const height = parseFloat(el.querySelector('.tileHeight').value);
+        if (!isNaN(width) && !isNaN(height) && width > 0 && height > 0) {
+            const letter = String.fromCharCode(65 + index);
+            const tile = { letter, width, height, color: getRandomColor(index) };
+            tileTypes.push(tile);
+            brickMap[letter] = tile;
+        }
+    });
+    return { tileTypes, brickMap };
+}
+
+function populateBrickSelects() {
+    const { tileTypes } = getBrickTypes();
+    const selects = document.querySelectorAll('#row-templates select');
+    
+    selects.forEach(sel => {
+        const isMainBrick = sel.id.includes('Main');
+        const selectedValue = sel.value;
+        
+        sel.innerHTML = '';
+        sel.add(isMainBrick ? new Option('-- 请选择 --', '') : new Option('-- 无 --', ''));
+        
+        tileTypes.forEach(brick => {
+            sel.add(new Option(`${brick.letter} (${brick.width} x ${brick.height})`, brick.letter));
+        });
+        
+        sel.value = selectedValue;
+    });
+}
+
+function generatePatternFromTemplate(template, brickMap, wallWidth) {
+    const { head, main, tail } = template;
+    if (!main) return { isValid: true, pattern: '', height: 0 };
+
+    const headBrick = brickMap[head];
+    const mainBrick = brickMap[main];
+    const tailBrick = brickMap[tail];
+
+    if (!mainBrick) return { isValid: false, error: "主循环砖未选择或无效。" };
+
+    const patternHeight = mainBrick.height;
+    if ((headBrick && headBrick.height !== patternHeight) || (tailBrick && tailBrick.height !== patternHeight)) {
+        return { isValid: false, error: "模板中所有砖块的高度必须一致。" };
+    }
+
+    const remainingWidth = wallWidth - (headBrick?.width || 0) - (tailBrick?.width || 0);
+    if (remainingWidth < 0) return { isValid: false, error: "头砖和尾砖的宽度已超出墙面总宽度。" };
+
+    const mainCount = Math.floor(remainingWidth / mainBrick.width);
+    const gap = remainingWidth - (mainCount * mainBrick.width);
+
+    if (gap > 1) return { isValid: false, error: `砖块组合无法铺满整行，存在 ${gap.toFixed(1)} 的空隙。` };
+
+    const pattern = (head || '') + main.repeat(mainCount) + (tail || '');
+    return { isValid: true, pattern, height: patternHeight };
+}
+
+function calculateAndDraw() {
+    const wallWidth = parseFloat(document.getElementById('wallWidth').value);
+    const wallHeight = parseFloat(document.getElementById('wallHeight').value);
+
+    if (isNaN(wallWidth) || isNaN(wallHeight)) return;
+
+    const { tileTypes, brickMap } = getBrickTypes();
+    if (tileTypes.length === 0) return;
+
+    const templates = {
+        first: { head: document.getElementById('firstRowHead').value, main: document.getElementById('firstRowMain').value, tail: document.getElementById('firstRowTail').value },
+        cycle1: { head: document.getElementById('cycleRow1Head').value, main: document.getElementById('cycleRow1Main').value, tail: document.getElementById('cycleRow1Tail').value },
+        cycle2: { head: document.getElementById('cycleRow2Head').value, main: document.getElementById('cycleRow2Main').value, tail: document.getElementById('cycleRow2Tail').value }
+    };
+
+    const firstResult = generatePatternFromTemplate(templates.first, brickMap, wallWidth);
+    const cycle1Result = generatePatternFromTemplate(templates.cycle1, brickMap, wallWidth);
+    const cycle2Result = generatePatternFromTemplate(templates.cycle2, brickMap, wallWidth);
+
+    for (const result of [firstResult, cycle1Result, cycle2Result]) {
+        if (!result.isValid) {
+            document.getElementById('results-container').innerHTML = `<li>错误: ${result.error}</li>`;
+            return;
+        }
+    }
+    
+    if (cycle1Result.pattern && cycle2Result.pattern && cycle1Result.height !== cycle2Result.height) {
+         document.getElementById('results-container').innerHTML = `<li>错误: 循环行1和循环行2的高度必须一致。</li>`;
+         return;
+    }
     
     const placedTiles = [];
-    const tileCounts = {};
-    tileTypes.forEach(t => {
-         const name = `砖块 (${t.width}x${t.height}x${t.depth})`;
-         tileCounts[name] = { count: 0, color: t.color };
-    });
-
+    const tileCounts = tileTypes.reduce((acc, t) => { acc[t.letter] = { ...t, count: 0 }; return acc; }, {});
+    
     let currentY = wallHeight;
-    let rowIndex = 0;
 
-    while (currentY > 0) {
-        const remainingWallHeight = currentY;
-        
-        const bestTileForNextRow = tileTypes.find(t => t.height <= remainingWallHeight);
-        if (!bestTileForNextRow) break;
-        
-        const currentRowHeight = bestTileForNextRow.height;
-        const validBricksForRow = tileTypes
-            .filter(t => t.height === currentRowHeight)
-            .sort((a, b) => b.width - a.width);
-        
-        const rowY = currentY - currentRowHeight;
-        layRow(rowY, wallWidth, validBricksForRow, rowIndex, isStaggered, placedTiles, tileCounts);
+    if (firstResult.pattern && firstResult.height <= currentY) {
+        let currentX = 0;
+        for (const letter of firstResult.pattern) {
+            const brick = brickMap[letter];
+            placedTiles.push({ x: currentX, y: wallHeight - currentY, ...brick });
+            tileCounts[letter].count++;
+            currentX += brick.width;
+        }
+        currentY -= firstResult.height;
+    }
+    
+    let cycleIndex = 0;
+    while(currentY > 0 && cycle1Result.pattern && cycle2Result.pattern) {
+        const result = (cycleIndex % 2 === 0) ? cycle1Result : cycle2Result;
+        if (result.height <= 0 || result.height > currentY + 0.1) break;
 
-        currentY -= currentRowHeight;
-        rowIndex++;
+        let currentX = 0;
+        for (const letter of result.pattern) {
+            const brick = brickMap[letter];
+            placedTiles.push({ x: currentX, y: wallHeight - currentY, ...brick });
+            tileCounts[letter].count++;
+            currentX += brick.width;
+        }
+        currentY -= result.height;
+        cycleIndex++;
     }
 
     drawWall(placedTiles, wallWidth, wallHeight);
     displayResults(tileCounts);
 }
 
-function layRow(y, wallWidth, validBricks, rowIndex, isStaggered, placedTiles, tileCounts) {
-    if (validBricks.length === 0) return;
-    
-    const mainBrick = validBricks[0];
-    let currentX = 0;
-    const isOddRow = rowIndex % 2 !== 0;
-
-    if (isStaggered && isOddRow && wallWidth > mainBrick.width) {
-        const offsetWidth = mainBrick.width / 2;
-        fillHorizontalSpace(0, y, offsetWidth, validBricks, placedTiles, tileCounts);
-        currentX = offsetWidth;
-    }
-
-    while (currentX + mainBrick.width <= wallWidth) {
-        const tileName = `砖块 (${mainBrick.width}x${mainBrick.height}x${mainBrick.depth})`;
-        placedTiles.push({ x: currentX, y, ...mainBrick });
-        tileCounts[tileName].count++;
-        currentX += mainBrick.width;
-    }
-
-    const remainingWidth = wallWidth - currentX;
-    if (remainingWidth > 0) {
-        fillHorizontalSpace(currentX, y, remainingWidth, validBricks, placedTiles, tileCounts);
-    }
-}
-
-function fillHorizontalSpace(startX, y, widthToFill, validBricks, placedTiles, tileCounts) {
-    let currentX = startX;
-    let remainingWidth = widthToFill;
-    const tolerance = 0.1;
-
-    while (remainingWidth > tolerance) {
-        let didPlaceTile = false;
-        for (const brick of validBricks) {
-            if (brick.width <= remainingWidth + tolerance) {
-                const tileName = `砖块 (${brick.width}x${brick.height}x${brick.depth})`;
-                placedTiles.push({ x: currentX, y, ...brick });
-                tileCounts[tileName].count++;
-                currentX += brick.width;
-                remainingWidth -= brick.width;
-                didPlaceTile = true;
-                break;
-            }
-        }
-        if (!didPlaceTile) break;
-    }
-}
-
 function drawWall(placedTiles, wallWidth, wallHeight) {
     const canvas = document.getElementById('wallCanvas');
     const ctx = canvas.getContext('2d');
-
-    // The scale calculation now depends on the canvas buffer size, not its display size.
-    const scaleX = canvas.width / wallWidth;
-    const scaleY = canvas.height / wallHeight;
-    const scale = Math.min(scaleX, scaleY); // Fill the buffer area
-
-    const renderWidth = wallWidth * scale;
-    const renderHeight = wallHeight * scale;
+    const scale = Math.min(canvas.width / wallWidth, canvas.height / wallHeight);
     
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    
     ctx.fillStyle = '#f0f0f0';
-    ctx.fillRect(0, 0, renderWidth, renderHeight);
-
+    ctx.fillRect(0, 0, wallWidth * scale, wallHeight * scale);
     ctx.strokeStyle = '#333';
-    ctx.strokeRect(0, 0, renderWidth, renderHeight);
+    ctx.strokeRect(0, 0, wallWidth * scale, wallHeight * scale);
 
     placedTiles.forEach(tile => {
         ctx.fillStyle = tile.color;
@@ -393,19 +415,17 @@ function displayResults(tileCounts) {
     const resultsContainer = document.getElementById('results-container');
     resultsContainer.innerHTML = '';
     
-    const sortedNames = Object.keys(tileCounts).sort();
-
-    for (const name of sortedNames) {
-        const data = tileCounts[name];
+    Object.keys(tileCounts).sort().forEach(letter => {
+        const data = tileCounts[letter];
         if (data.count > 0) {
+            const name = `砖块 ${letter} (${data.width}x${data.height})`;
             const li = document.createElement('li');
-            li.innerHTML = `
-                <div class="color-box" style="background-color: ${data.color};"></div>
-                <span>${name}:</span>
-                <strong>${data.count} 块</strong>
-            `;
+            li.innerHTML = `<div class="color-box" style="background-color: ${data.color};"></div><span>${name}:</span><strong>${data.count} 块</strong>`;
             resultsContainer.appendChild(li);
         }
+    });
+    if (resultsContainer.innerHTML === '') {
+        resultsContainer.innerHTML = '<li>没有铺设任何砖块。请定义并选择布局模式。</li>';
     }
 }
 
