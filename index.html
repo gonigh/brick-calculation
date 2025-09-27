@@ -109,23 +109,23 @@
         
         <h2>2. 布局模式定义</h2>
         <div id="row-templates">
-            <h3>固定首行 (最顶行)</h3>
+            <h3>最底行（循环）</h3>
             <div class="row-template-group">
-                <label for="firstRowHead">头砖:</label> <select id="firstRowHead"></select>
-                <label for="firstRowMain">主循环砖:</label> <select id="firstRowMain"></select>
-                <label for="firstRowTail">尾砖:</label> <select id="firstRowTail"></select>
+                 <label for="cycleRow2Head">头砖:</label> <select id="cycleRow2Head"></select>
+                 <label for="cycleRow2Main">主循环砖:</label> <select id="cycleRow2Main"></select>
+                 <label for="cycleRow2Tail">尾砖:</label> <select id="cycleRow2Tail"></select>
             </div>
-            <h3>循环行 1</h3>
+            <h3>自下向上第二行（循环）</h3>
             <div class="row-template-group">
                 <label for="cycleRow1Head">头砖:</label> <select id="cycleRow1Head"></select>
                 <label for="cycleRow1Main">主循环砖:</label> <select id="cycleRow1Main"></select>
                 <label for="cycleRow1Tail">尾砖:</label> <select id="cycleRow1Tail"></select>
             </div>
-            <h3>循环行 2</h3>
+            <h3>首行 (固定)</h3>
             <div class="row-template-group">
-                 <label for="cycleRow2Head">头砖:</label> <select id="cycleRow2Head"></select>
-                 <label for="cycleRow2Main">主循环砖:</label> <select id="cycleRow2Main"></select>
-                 <label for="cycleRow2Tail">尾砖:</label> <select id="cycleRow2Tail"></select>
+                <label for="firstRowHead">头砖:</label> <select id="firstRowHead"></select>
+                <label for="firstRowMain">主循环砖:</label> <select id="firstRowMain"></select>
+                <label for="firstRowTail">尾砖:</label> <select id="firstRowTail"></select>
             </div>
         </div>
 
@@ -394,21 +394,124 @@ function calculateAndDraw() {
 function drawWall(placedTiles, wallWidth, wallHeight) {
     const canvas = document.getElementById('wallCanvas');
     const ctx = canvas.getContext('2d');
-    const scale = Math.min(canvas.width / wallWidth, canvas.height / wallHeight);
     
+    // 为尺寸标注留出边距
+    const padding = { top: 40, right: 40, bottom: 50, left: 60 };
+    
+    const canvasContentWidth = canvas.width - padding.left - padding.right;
+    const canvasContentHeight = canvas.height - padding.top - padding.bottom;
+
+    const scale = Math.min(canvasContentWidth / wallWidth, canvasContentHeight / wallHeight);
+    
+    const scaledWidth = wallWidth * scale;
+    const scaledHeight = wallHeight * scale;
+    
+    const offsetX = padding.left + (canvasContentWidth - scaledWidth) / 2;
+    const offsetY = padding.top + (canvasContentHeight - scaledHeight) / 2;
+
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    // --- 绘制墙体和砖块 ---
+    ctx.save();
+    ctx.translate(offsetX, offsetY);
+    
     ctx.fillStyle = '#f0f0f0';
-    ctx.fillRect(0, 0, wallWidth * scale, wallHeight * scale);
+    ctx.fillRect(0, 0, scaledWidth, scaledHeight);
     ctx.strokeStyle = '#333';
-    ctx.strokeRect(0, 0, wallWidth * scale, wallHeight * scale);
+    ctx.strokeRect(0, 0, scaledWidth, scaledHeight);
 
     placedTiles.forEach(tile => {
+        const tx = tile.x * scale;
+        const ty = tile.y * scale;
+        const tw = tile.width * scale;
+        const th = tile.height * scale;
         ctx.fillStyle = tile.color;
-        ctx.fillRect(tile.x * scale, tile.y * scale, tile.width * scale, tile.height * scale);
+        ctx.fillRect(tx, ty, tw, th);
         ctx.strokeStyle = '#fff';
         ctx.lineWidth = Math.max(0.5, scale * 1.5);
-        ctx.strokeRect(tile.x * scale, tile.y * scale, tile.width * scale, tile.height * scale);
+        ctx.strokeRect(tx, ty, tw, th);
     });
+    
+    ctx.restore();
+
+    // --- 绘制工程风格的尺寸标注 ---
+    ctx.strokeStyle = '#000';
+    ctx.fillStyle = '#000';
+    ctx.lineWidth = 1;
+    ctx.font = '14px Arial';
+    const tickSize = 8;
+    const extensionGap = 8; // 墙体和尺寸界线之间的空隙
+    const dimensionLineOffset = 20; // 尺寸线离墙体的距离
+
+    // 绘制尺寸标记的函数 (斜线)
+    const drawTick = (x, y, angle) => {
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(angle * Math.PI / 180);
+        ctx.beginPath();
+        ctx.moveTo(-tickSize / 2, tickSize / 2);
+        ctx.lineTo(tickSize / 2, -tickSize / 2);
+        ctx.stroke();
+        ctx.restore();
+    };
+
+    // --- 绘制宽度尺寸 (底部) ---
+    const yBottom = offsetY + scaledHeight;
+    const yDimLine = yBottom + dimensionLineOffset;
+    
+    // 尺寸界线 (从墙角延伸)
+    ctx.beginPath();
+    ctx.moveTo(offsetX, yBottom);
+    ctx.lineTo(offsetX, yDimLine + 5);
+    ctx.moveTo(offsetX + scaledWidth, yBottom);
+    ctx.lineTo(offsetX + scaledWidth, yDimLine + 5);
+    ctx.stroke();
+
+    // 尺寸线 (水平线)
+    ctx.beginPath();
+    ctx.moveTo(offsetX, yDimLine);
+    ctx.lineTo(offsetX + scaledWidth, yDimLine);
+    ctx.stroke();
+
+    // 尺寸线两端的标记
+    drawTick(offsetX, yDimLine, 45);
+    drawTick(offsetX + scaledWidth, yDimLine, 45);
+
+    // 宽度文字
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'bottom';
+    ctx.fillText(wallWidth.toString()+'mm', offsetX + scaledWidth / 2, yDimLine - 4);
+
+    // --- 绘制高度尺寸 (左侧) ---
+    const xLeft = offsetX;
+    const xDimLine = xLeft - dimensionLineOffset;
+
+    // 尺寸界线 (从墙角延伸)
+    ctx.beginPath();
+    ctx.moveTo(xLeft, offsetY);
+    ctx.lineTo(xDimLine - 5, offsetY);
+    ctx.moveTo(xLeft, offsetY + scaledHeight);
+    ctx.lineTo(xDimLine - 5, offsetY + scaledHeight);
+    ctx.stroke();
+
+    // 尺寸线 (垂直线)
+    ctx.beginPath();
+    ctx.moveTo(xDimLine, offsetY);
+    ctx.lineTo(xDimLine, offsetY + scaledHeight);
+    ctx.stroke();
+
+    // 尺寸线两端的标记
+    drawTick(xDimLine, offsetY, 45);
+    drawTick(xDimLine, offsetY + scaledHeight, 45);
+    
+    // 高度文字 (旋转)
+    ctx.save();
+    ctx.translate(xDimLine - 8, offsetY + scaledHeight / 2);
+    ctx.rotate(-Math.PI / 2); // 逆时针旋转90度
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'bottom';
+    ctx.fillText(wallHeight.toString()+'mm', 0, 0);
+    ctx.restore();
 }
 
 function displayResults(tileCounts) {
