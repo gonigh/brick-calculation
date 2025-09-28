@@ -106,8 +106,14 @@
         <div class="input-group">
             <label>墙面高度:</label> <input type="number" id="wallHeight" value="1070" step="any">
         </div>
-        
-        <h2>2. 布局模式定义</h2>
+
+        <h2>2. 砖块类型定义</h2>
+        <div id="tileTypesContainer">
+            <!-- Bricks will be loaded from localStorage or default here -->
+        </div>
+        <button id="addTile">添加砖块类型</button>
+
+        <h2>3. 布局模式定义</h2>
         <div id="row-templates">
             <h3>最底行（循环）</h3>
             <div class="row-template-group">
@@ -128,12 +134,6 @@
                 <label for="firstRowTail">尾砖:</label> <select id="firstRowTail"></select>
             </div>
         </div>
-
-        <h2>3. 砖块类型定义</h2>
-        <div id="tileTypesContainer">
-            <!-- Bricks will be loaded from localStorage or default here -->
-        </div>
-        <button id="addTile">添加砖块类型</button>
     </div>
 
     <div class="panel">
