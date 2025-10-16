@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>模板化墙面砖块计算器 (带本地保存)</title>
+    <title>模板化墙面砖块计算器</title>
     <style>
         /* General Styles */
         body {
@@ -371,21 +371,40 @@ function calculateAndDraw() {
         currentY -= firstResult.height;
     }
     
-    let cycleIndex = 0;
-    while(currentY > 0 && cycle1Result.pattern && cycle2Result.pattern) {
-        const result = (cycleIndex % 2 === 0) ? cycle1Result : cycle2Result;
-        if (result.height <= 0 || result.height > currentY + 0.1) break;
+    // ==================== MODIFICATION START ====================
+    // This entire block is the corrected logic for laying cyclical rows.
+    
+    const cycleHeight = cycle1Result.height; // Assuming both cycle rows have the same height
+    if (currentY > 0 && cycleHeight > 0 && cycle1Result.pattern && cycle2Result.pattern) {
+        // 1. Calculate how many looping rows are needed to fill the remaining space.
+        const numLoopingRows = Math.floor(currentY / cycleHeight);
 
-        let currentX = 0;
-        for (const letter of result.pattern) {
-            const brick = brickMap[letter];
-            placedTiles.push({ x: currentX, y: wallHeight - currentY, ...brick });
-            tileCounts[letter].count++;
-            currentX += brick.width;
+        // 2. Determine the starting row pattern. The goal is to ensure the "bottom row" (cycle2) is always at the actual bottom.
+        //    - If the total number of looping rows is ODD (e.g., 3), the sequence from top to bottom must be (2, 1, 2). So we start with cycle2.
+        //    - If the total number of looping rows is EVEN (e.g., 4), the sequence from top to bottom must be (1, 2, 1, 2). So we start with cycle1.
+        const startWithCycle2 = (numLoopingRows % 2 !== 0);
+
+        let cycleIndex = 0;
+        while(currentY > 0) {
+            // Determine which result to use for the CURRENT row being drawn (from the top) based on our starting pattern logic.
+            const useCycle2 = (startWithCycle2) ? (cycleIndex % 2 === 0) : (cycleIndex % 2 !== 0);
+            const result = useCycle2 ? cycle2Result : cycle1Result;
+
+            if (result.height <= 0 || result.height > currentY + 0.1) break; // Safety break
+
+            let currentX = 0;
+            for (const letter of result.pattern) {
+                const brick = brickMap[letter];
+                placedTiles.push({ x: currentX, y: wallHeight - currentY, ...brick });
+                tileCounts[letter].count++;
+                currentX += brick.width;
+            }
+            currentY -= result.height;
+            cycleIndex++;
         }
-        currentY -= result.height;
-        cycleIndex++;
     }
+
+    // ===================== MODIFICATION END =====================
 
     drawWall(placedTiles, wallWidth, wallHeight);
     displayResults(tileCounts);
